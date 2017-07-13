@@ -16,6 +16,13 @@ module LolSoap::Builder
   #   # => <ns2:someTag/>
   class BlockParams
 
+    class << self
+      # Dummy for tests
+      def clear_callbacks
+        true
+      end
+    end
+
     RESERVED_METHODS = %w(object_id respond_to_missing? inspect === to_s)
 
     alias :__class__ :class

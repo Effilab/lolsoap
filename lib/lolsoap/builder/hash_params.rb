@@ -1,6 +1,4 @@
 require 'lolsoap/wsdl'
-require 'byebug'
-require 'awesome_print'
 
 module LolSoap::Builder
   # Used to build XML, with namespaces automatically added.
@@ -15,17 +13,38 @@ module LolSoap::Builder
   #   builder.parse({ ns: 'ns2', tag: 'someTag'} => nil)
   #   # => <ns2:someTag/>
   class HashParams
+    @all_before_parse = []
+
+    class << self
+      def clear_callbacks
+        @all_before_parse = []
+      end
+
+      def all_before_parse
+        @all_before_parse
+      end
+
+      def before_parse(&block)
+        @all_before_parse << block
+      end
+    end
+
+    def before_parse
+      self.class.all_before_parse
+    end
 
     def initialize(node, type = WSDL::NullType.new)
       @node = node
       @type = type || WSDL::NullType.new
     end
 
-    #
-
     def parse(hash, node: @node, type: @type)
-      # TODO : a before_parse callback
-      # -> sort hash with type.elements_names
+      # TODO : beautifully and DRY
+      # callbacks are cleared only on new request
+      unless hash.empty?
+        before_parse.each { |block| block.call(hash, node, type) }
+      end
+      # TODO : test in the before_parse callback
       # -> replace tag name by @type.elements_names where identical tr('_', '').downcase
 
       hash.each do |key, val|

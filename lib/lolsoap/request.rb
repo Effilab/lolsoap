@@ -9,10 +9,12 @@ module LolSoap
     def initialize(envelope)
       @envelope    = envelope
       @xml_options = default_xml_options
+      clear_callbacks
     end
 
     # @see Envelope
-    def_delegators :envelope, :builder=, :body, :header, :soap_namespace
+    def_delegators :envelope, :builder=, :body, :header, :soap_namespace,
+                   :before_parse, :clear_callbacks
 
     # URL to be POSTed to
     def_delegator :envelope, :endpoint, :url

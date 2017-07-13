@@ -1,7 +1,6 @@
 require 'helper'
 require 'lolsoap/builder/hash_params'
 require 'pp'
-require 'awesome_print'
 
 module LolSoap
   describe Builder::HashParams do
@@ -65,6 +64,39 @@ module LolSoap
           name: 'foo', prefix: node.namespace_scopes[1], attributes: {},
           sub_hash: nil, content: 'bar', sub_type: type.sub_type('foo')
         )
+      end
+    end
+
+    # hash.replace(
+    #   hash.sort_by do |key, _|
+    #     el = key.is_a?(Hash) ? key[:tag].to_s : key.to_s
+    #     type.elements_names.index(el) || 1 / 0.0
+    #   end.to_h
+    # )
+    # TODO Extract and move
+    describe '::before_parse' do
+      # callbacks are cleared only upon request instanciation
+      def with_callback
+        callback = MiniTest::Mock.new
+        subject.class.before_parse do |hash, node, type|
+          callback.expect(:call, nil, [hash, node, type])
+        end
+        yield
+        callback.verify
+        subject.class.clear_callbacks
+      end
+
+      it 'stores a callback' do
+        with_callback do
+          subject.before_parse.size.must_equal 1
+        end
+      end
+
+      it 'calls a callback' do
+        skip 'need to dig'
+        with_callback do
+          subject.parse(foo: 'bar', node: node, type: type)
+        end
       end
     end
   end

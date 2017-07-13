@@ -6,6 +6,8 @@ require 'lolsoap/builder/block_params'
 
 module LolSoap
   class Envelope
+    extend Forwardable
+
     attr_reader :wsdl, :operation, :doc, :builder
 
     # @private
@@ -21,6 +23,9 @@ module LolSoap
       self.builder = :block
       initialize_doc
     end
+
+    # @see Builder
+    def_delegators :builder, :before_parse, :clear_callbacks
 
     def builder=(label)
       @builder = {
