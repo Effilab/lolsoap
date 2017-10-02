@@ -3,6 +3,38 @@ require 'lolsoap/callbacks.rb'
 
 module LolSoap
   describe Callbacks do
+    describe 'with class ivar storage' do
+      before do
+        @lol_callbacks.disable
+
+        class Callbacks::Store
+          def storage
+            @store ||= []
+          end
+        end
+
+        @ivar_callbacks = Callbacks.new.tap do |lc|
+          lc.for('a.b') << ->(name, mutable) { mutable << "Lol from ivar #{name}" }
+        end
+      end
+
+      after do
+        class Callbacks::Store
+          def storage
+            Thread.current[:registered_callbacks] ||= []
+          end
+        end
+
+        @ivar_callbacks.disable
+      end
+
+      it 'can call a callback' do
+        ary = []
+        Callbacks.in('a.b').expose('lol', ary)
+        ary.must_equal ['Lol from ivar lol']
+      end
+    end
+
     before do
       @lol_callbacks = Callbacks.new.tap do |lc|
         lc.for('a.b') << ->(name, mutable) { mutable << "Lol #{name}" }

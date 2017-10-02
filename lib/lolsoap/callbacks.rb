@@ -18,6 +18,30 @@
 # google_ads_callbacks.enable
 #
 class LolSoap::Callbacks
+
+  class Store
+    class << self
+      def storage
+        Thread.current[:registered_callbacks] ||= []
+      end
+
+      def in(key)
+        storage.flat_map do |c|
+          c.callbacks[key]
+        end.compact
+      end
+
+      def enable(klass)
+        return storage if storage.include?(klass)
+        storage.push(klass)
+      end
+
+      def disable(klass)
+        storage.delete(klass)
+      end
+    end
+  end
+
   # Aggregates all callbacks on the selected key to call them.
   class Selected
     def initialize(callbacks = [])
@@ -31,13 +55,7 @@ class LolSoap::Callbacks
 
   # Selects the callback hashes in current thread.
   def self.in(key)
-    Thread.current[:registered_callbacks] ||= []
-
-    Selected.new(
-      Thread.current[:registered_callbacks].flat_map do |c|
-        c.callbacks[key]
-      end.compact
-    )
+    Selected.new(Store.in(key))
   end
 
   attr_reader :callbacks
@@ -45,7 +63,6 @@ class LolSoap::Callbacks
   # Manages callbacks in instances so we can manage sets of callbacks.
   def initialize
     @callbacks = {}
-    Thread.current[:registered_callbacks] ||= []
     enable
   end
 
@@ -55,10 +72,10 @@ class LolSoap::Callbacks
   end
 
   def enable
-    Thread.current[:registered_callbacks] |= [self]
+    Store.enable(self)
   end
 
   def disable
-    Thread.current[:registered_callbacks].delete(self)
+    Store.disable(self)
   end
 end
